@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=utf-8 />
+    <title>Denver Amentities</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: whitesmoke;
+            font-family: Lato, sans-serif;
+            color: #0D0000;
+        }
+        header {
+            padding: 6px 10%;
+        }
+        h1 {
+            display: inline-block;
+            margin-right: 20px;
+            color: #001323;
+        }
+        h2 {
+            display: inline-block;
+            color: #001323;
+        }
+        #map {
+            width: 80%;
+            height: 540px;
+            margin: 10px auto;
+        }
+        footer {
+            padding: 6px 10%;
+            width: 80%;
+        }
+        p {
+            font-size: 1em;
+            color: #001323;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Denver Amenities</h1>
+        <h2>Fire Stations, Food Stores, and After School Programs</h2>
+    </header>
+
+    <div id='map'></div>
+
+    <footer>
+        <p>Map authored by M. Duever</p>
+        <p>The data is from the <a href ="https://www.denvergov.org/opendata/">Denver Open Data Catalog</a>. Clicking on the map will show all Fire Stations, After School Programs, and places to buy food within a 1 km radius of that point.</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <script src="data/denver-fire-stations.js"></script>
+    <script src="data/after-school-programs.js"></script>
+    <script src="data/denver-food-stores.js"></script>
+    <script>
+
+       var map = L.map('map', {
+          center: [39.7256, -104.9252],
+          zoom: 11,
+      });
+
+      var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+          subdomains: 'abcd',
+          maxZoom: 19
+      }).addTo(map);
+
+
+      var commonStyles = { //set common style elements
+        weight: 1,
+        stroke: 0,
+        fillOpacity: 1,
+        radius: 5
+      }
+// add fire stations
+      var stationLayer = L.geoJson(stations,{
+        pointToLayer: function(feature, latlng){
+          return L.circleMarker(latlng, commonStyles);
+        },
+        style: function(feature) { //style the markers
+          return{
+            color: '#ff3300',
+            fillColor: '#ff3300'
+          }
+        },
+        onEachFeature: function(feature, layer) {
+             layer.bindTooltip(layer.feature.properties.STATION_NU); //add tooltip
+        }
+      }).addTo(map);
+
+// add after school programs layer
+      var programLayer = L.geoJson(programs,{
+        pointToLayer: function(feature, latlng){
+          return L.circleMarker(latlng, commonStyles);
+        },
+        style: function(feature){
+          return{
+            color: '#0000ff',
+            fillColor: '#0000ff'
+          }
+        },
+        onEachFeature: function(feature, layer) {
+             layer.bindTooltip(layer.feature.properties.ORGANIZATI); //add tooltip
+        }
+      }).addTo(map);
+
+
+      var storeLayer = L.geoJson(stores,{
+        pointToLayer: function(feature, latlng){
+          return L.circleMarker(latlng, commonStyles);
+        },
+        style: function(feature){
+          return{
+            color: '#00cc00',
+            fillColor: '#00cc00'
+          }
+        },
+        onEachFeature: function(feature, layer) {
+            layer.bindTooltip(layer.feature.properties.STORE_NAME); //add tooltip
+        }
+      }).addTo(map);
+
+
+      map.on('click', function(e) { //filter by click location and distance
+
+        stationLayer.eachLayer(function(layer) {
+              var distance = e.latlng.distanceTo(layer.getLatLng())/1000; // distance as km
+
+              if(distance > 1) {
+                  layer.setStyle({
+                    stroke: false,
+                    fillOpacity: .1
+                  });
+              } else {
+                  layer.setStyle({
+                      stroke: true,
+                      fill: true,
+                      fillOpacity: true
+                  });
+              }
+          });
+
+
+          storeLayer.eachLayer(function(layer) {
+              var distance = e.latlng.distanceTo(layer.getLatLng())/1000; // distance as km
+
+              if(distance > 1) {
+                  layer.setStyle({
+                      stroke: false,
+                      fillOpacity: .1
+                  });
+              } else {
+                  layer.setStyle({
+                      stroke: true,
+                      fill: true,
+                      fillOpacity: true
+                  });
+              }
+          });
+
+         programLayer.eachLayer(function(layer) {
+              var distance = e.latlng.distanceTo(layer.getLatLng())/1000; // distance as km
+
+              if(distance > 1) {
+                  layer.setStyle({
+                    stroke: false,
+                    fillOpacity: .1
+                  });
+              } else {
+                  layer.setStyle({
+                      stroke: true,
+                      fill: true,
+                      fillOpacity: true
+                  });
+              }
+          });
+      });
+
+      var sourcesLayers = {
+          "<b style= 'color: #ff3300'>Fire Stations</b>": stationLayer,
+          "<b style= 'color: #00cc00'>Food Stores</b>": storeLayer,
+          "<b style= 'color: #0000ff'>After School Programs</b>": programLayer
+      }
+
+      L.control.layers(null, sourcesLayers, { collapsed:false }).addTo(map);
+    </script>
+
+</body>
+
+</html>
